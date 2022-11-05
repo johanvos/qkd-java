@@ -15,39 +15,48 @@ public class QKD {
     static final int N = 8;
     static Random random = new Random();
 
-    public static void main (String[] args) {
-        QuantumExecutionEnvironment simulator = new SimpleQuantumExecutionEnvironment();
+    public static void main(String[] args) {
+        QuantumExecutionEnvironment simulator = 
+                new SimpleQuantumExecutionEnvironment();
         Program program = new Program(N);
         Step data = new Step();
         data.addGates(new X(0), new X(2), new X(3), new X(6));
         program.addStep(data);
+
+        // Places to store random booleans:
         boolean[] aliceRandom = new boolean[N];
         boolean[] bobRandom = new boolean[N];
-        Step aliceH = new Step();
-        Step bobH = new Step();
+
         Step aliceBase = new Step();
+        Step noOpSeparator = new Step();
         Step bobBase = new Step();
+
+        // Alice and Bob randomly apply Hadamard gates
         for (int i = 0; i < N; i++) {
-            aliceH.addGate(new Hadamard(i));
-            bobH.addGate(new Hadamard(i));
             aliceRandom[i] = random.nextBoolean();
             bobRandom[i] = random.nextBoolean();
             if (aliceRandom[i]) aliceBase.addGate(new Hadamard(i));
             if (bobRandom[i]) bobBase.addGate(new Hadamard(i));
         }
+
         program.addStep(aliceBase);
-        program.addStep(aliceH);
-        program.addStep(bobH);
+        program.addStep(noOpSeparator);
         program.addStep(bobBase);
         Result result = simulator.runProgram(program);
         Qubit[] qubits = result.getQubits();
+
+        // When did Alice's and Bob's random choices agree?
         for (int i = 0; i < N; i++) {
             if (aliceRandom[i] == bobRandom[i]) {
-                System.err.println("Index " + i+" has a usable bit: " + qubits[i].measure());
+                System.err.println("Index " + i + 
+                        " has a usable bit: " + qubits[i].measure());
             } else {
-                System.err.println("Bob and Alice used a different base for measuring qubit "+i+", discard.");
+                System.err.println(
+                        "Bob and Alice used a different base " +
+                        "for measuring qubit " + i + ", discard.");
             }
         }
+
         Renderer.renderProgram(program);
     }
 }
